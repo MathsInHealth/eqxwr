@@ -1,0 +1,12 @@
+Package: eqxwr
+Type: Package
+Title: EQ-5D-5L values for EQ-5D-3L health states: reverse crosswalk
+Version: 0.0.1
+Encoding: UTF-8
+Authors@R: person("Kim", "Rand", email = "krand@mathsinhealth.com", role = c("aut", "cre"))
+Description: Use EQ-5D-5L value sets for EQ-5D-3L health states. 
+Depends: R (>= 3.5)
+Imports: rappdirs
+License: GPL (>= 2)
+LazyData: TRUE
+RoxygenNote: 7.2.0
