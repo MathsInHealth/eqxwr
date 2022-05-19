@@ -257,3 +257,62 @@ eqxwr <- function(x, country = NULL, dim.names = c("mo", "sc", "ua", "pd", "ad")
 }
 
 
+#' @title eqxwr_add
+#' @description Add user-defined EQ-5D-5L value set to reverse crosswalk options.
+#' @param df A data.frame or file name pointing to csv file. The contents of the data.frame or csv file should be exactly two olumns: state, containing a list of all 3125 EQ-5D-5L health state vectors, and a column of corresponding utility values, with a suitable name.
+#' @param country Optional string. If not NULL, will override name from second column of df argument
+#' @return True/False, indicating success or error.
+#' @examples 
+#' \donttest{
+#' eqxwr_add('C:/SOMEFOLDER/thisfile.csv')
+#' eqwxr_add(some.data.frame, 'FANTASIA')
+#' }
+#' @export
+eqxwr_add <- function(df, country = NULL) {
+  if(class(df) == 'character') {
+    if(!file.exists(df)) stop('File named ', df, ' does not appear to exist. Exiting.')
+    df <- read.csv(file = df, stringsAsFactors = F)
+  } 
+  if(!NCOL(df) == 2) stop('df should have exactly two columns.')
+  class(df[,1]) <- 'integer'
+  if(!NROW(df) == 3125) stop('df should have exactly 3125 rows.')
+  if(!all(df[,1] %in% .pkgenv$states_5L$state)) stop('First column of df should contain all EQ-5D-5L health state indexes exactly once.')
+  df <- df(match(.pkgenv$states_5L$state, df[,1]))
+  if(!is.null(country)) {
+    if(length(country)>1) {
+      warning('Length of country argument > 1, first item used.')
+      country <- country[1]
+    }
+    colnames(df)[2] <- country
+  }
+  thisName <- colnames(df)[2]
+  if(thisname %in% colnames(.uservsets5L)) stop('New country name already in user-defined EQ-5D-5L value set list.')
+  
+  if(any(is.na(df[,2]*-1.1))) stop("Non-numeric values in second column of df.")
+  # No problems
+  
+  .uservsets5L[, thisName] <- df[,2]
+  assign(x = 'xwsets', value = .pkgenv$probs %*% cbind(as.matrix(.vsets5L[, -1, drop = F]), as.matrix(.uservsets5L[,-1, drop = F])), envir = .pkgenv)
+  cntrs <- .cntrcodes[.cntrcodes$ISO3166Alpha2 %in% c(colnames(.vsets5L)[-1], colnames(.uservsets5L)[-1]),]
+  rownames(cntrs) <- NULL
+  assign(x = "country_codes", value = cntrs, envir = .pkgenv)
+  
+  yesno <- 'n'
+  if(file.exists(file.path(.pkgenv$cache_path, "cache.Rdta"))) yesno <- 'y'
+  else {
+    message('If you wish for the user-defined reverse value set to be persistent, a file needs to be saved to the hard-drive.')
+    message('The file would be saved to: ', .pkgenv$cache_path)
+    message('Please type "y", "Y", "Yes", or "yes" to allow this file to be saved. All other inputs will be interpreted as "no".')
+    yesno = readline(prompt = "Save? (Yes/No) : ")  
+  }
+  
+  if(tolower(yesno) %in% c("yes", "y")) {
+    message('Persistent data will be saved.')
+    save(list = ls(envir = .pkgenv), envir = .pkgenv, file = file.path(.pkgenv$cache_path, 'cache.Rdta'))
+  } else {
+    message('Persistent data will not be saved.')
+  }
+  1
+}
+
+

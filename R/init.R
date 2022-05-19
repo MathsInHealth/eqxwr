@@ -26,7 +26,6 @@
       fexist <- T
       load(file.path(.pkgenv$cache_path, "cache.Rdta"), envir = .pkgenv)
     }
-    
   }
   if(!fexist) {
     assign(x = "PPP", value = .EQxwrprob(), envir = .pkgenv)
