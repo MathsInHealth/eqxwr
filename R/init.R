@@ -15,31 +15,54 @@
 ##  You should have received a copy of the GNU General Public License
 ##  along with eqxwr If not, see <http://www.gnu.org/licenses/>.
 
-.pkgenv <- new.env(parent=emptyenv())
+
 
 .onLoad <- function(libname, pkgname) {
-  assign(x = "cache_path", value = find_cache_dir(pkgname), envir = .pkgenv)
+  if('eq.env' %in% names(.Options)) {
+    pkgenv <- getOption('eq.env')
+  } else {
+    options("eq.env" = (pkgenv <- new.env(parent=emptyenv())))
+  }
+  assign(x = "cache_path", value = find_cache_dir('eq5d-suite'), envir = pkgenv)
   
   fexist <- F
-  if(dir.exists(.pkgenv$cache_path)) {
-    if(file.exists(file.path(.pkgenv$cache_path, "cache.Rdta"))) {
+  if(dir.exists(pkgenv$cache_path)) {
+    if(file.exists(file.path(pkgenv$cache_path, "cache.Rdta"))) {
       fexist <- T
-      load(file.path(.pkgenv$cache_path, "cache.Rdta"), envir = .pkgenv)
+      load(file.path(pkgenv$cache_path, "cache.Rdta"), envir = pkgenv)
+      # load(file.path(pkgenv$cache_path, "cache_global.Rdta"), envir = globalenv())
     }
   }
-  if(!fexist) {
-    assign(x = "PPP", value = .EQxwrprob(), envir = .pkgenv)
-    assign(x = "probs", value = .pstate3t5(.pkgenv$PPP), envir = .pkgenv)
-  }
-  tmp <- make_all_EQ_states('3L')
-  tmp$state <- toEQ5Dindex(tmp)
-  assign(x = "states_3L", value = tmp, envir = .pkgenv)
-  tmp <- make_all_EQ_states('5L')
-  tmp$state <- toEQ5Dindex(tmp)
-  assign(x = "states_5L", value = tmp, envir = .pkgenv)
-  
-  assign(x = 'xwsets', value = .pkgenv$probs %*% cbind(as.matrix(.vsets5L[, -1, drop = F]), as.matrix(.uservsets5L[,-1, drop = F])), envir = .pkgenv)
-  cntrs <- .cntrcodes[.cntrcodes$ISO3166Alpha2 %in% c(colnames(.vsets5L)[-1], colnames(.uservsets5L)[-1]),]
-  rownames(cntrs) <- NULL
-  assign(x = "country_codes", value = cntrs, envir = .pkgenv)
+  .fixPkgEnv()
 }
+
+.fixPkgEnv <- function() {
+  pkgenv <- getOption('eq.env')
+  
+  # if(!'EQrxwmod7' %in% names(pkgenv)) assign(x = "EQrxwmod7", .EQrxwmod7, envir = pkgenv)
+  # if(!'vsets5L' %in% names(pkgenv)) assign(x = "vsets5L", .vsets5L, envir = pkgenv)
+  # if(!'cntrcodes' %in% names(pkgenv)) assign(x = "cntrcodes", .cntrcodes, envir = pkgenv)
+  
+  
+  if(!'states_3L' %in% names(pkgenv)) assign(x = "states_3L", value = make_all_EQ_states(version = '3L', append_index = T), envir = pkgenv)
+  if(!'states_5L' %in% names(pkgenv)) assign(x = "states_5L", value =  make_all_EQ_states(version = '5L', append_index = T), envir = pkgenv)
+  if(!'uservsets5L' %in% names(pkgenv)) assign(x = "uservsets5L", value =  pkgenv$states_5L[,"state", drop = F], envir = pkgenv)
+  
+  if(!'PPP' %in% names(pkgenv)) assign(x = "PPP", value = .EQxwrprob(par = .EQrxwmod7), envir = pkgenv)
+  if(!'probs' %in% names(pkgenv)) assign(x = "probs", value = .pstate3t5(pkgenv$PPP), envir = pkgenv)
+  
+  if('probs' %in% names(pkgenv)) assign(x = 'xwrsets', value = pkgenv$probs %*% cbind(as.matrix(.vsets5L[, -1, drop = F]), if("uservsets5L" %in% names(pkgenv)) as.matrix(pkgenv$uservsets5L[,-1, drop = F]) else NULL), envir = pkgenv)
+  
+  
+  
+  EQvariants <- c('5L' = '5L')
+  assign(x = 'country_codes', envir = pkgenv, value = lapply(EQvariants, function(EQvariant) {
+    # message(EQvariant)
+    tmp <- .cntrcodes[.cntrcodes$ISO3166Alpha2 %in% colnames(get(paste0('.vsets', EQvariant)))[-1],]
+    rownames(tmp) <- NULL
+    tmp
+  }))
+  if(file.exists(file.path(pkgenv$cache_path, 'cache.Rdta'))) save(list = ls(envir = pkgenv), envir = pkgenv, file = file.path(pkgenv$cache_path, 'cache.Rdta'))
+  
+}
+

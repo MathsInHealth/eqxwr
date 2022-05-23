@@ -4,7 +4,7 @@
 \alias{.EQxwrprob}
 \title{.EQxwrprob}
 \usage{
-.EQxwrprob(par = .EQrxwmod7)
+.EQxwrprob(par = NULL)
 }
 \arguments{
 \item{par}{Matrix of model parameters}

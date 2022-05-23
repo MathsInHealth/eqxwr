@@ -16,8 +16,10 @@ dir.create2 <- function(path, ...) {
 }
 
 
-.fixCountries <- function(countries) {
-  cntrs <- .pkgenv$country_codes
+.fixCountries <- function(countries, EQvariant = '5L') {
+  pkgenv <- getOption("eq.env")
+  cntrs <- rbind(pkgenv$country_codes[[EQvariant]], pkgenv[[paste0("user_defined_", EQvariant)]])
+  
   sapply(countries, function(country) {
     tmp <- which(toupper(as.matrix(cntrs)) == toupper(country), arr.ind = T)
     if(nrow(tmp))  return(cntrs$ISO3166Alpha2[tmp[1,1]])
@@ -34,4 +36,22 @@ find_cache_dir <- function(pkg) {
   } else {
     rappdirs::user_cache_dir(pkg, "R")
   }
+}
+
+.prettyPrint <- function(df) {
+  cnames <- colnames(df)
+  n      <- as.matrix(nchar(cnames))
+  
+  d <- as.matrix(as.data.frame(apply(df, 2, format, simplify = F)))
+  d[which(trimws(d) == "NA", arr.ind = T)] <- ""
+  n <- apply(cbind(n, nchar(d[1,])), 1, max)
+  
+  fmts <- paste0("%",n, "s")
+  for(i in 1:length(cnames)) {
+    cnames[i] <- sprintf(fmts[i], cnames[i])
+    d[,i] <- sprintf(fmts[i], trimws(d[,i]))
+  }
+  d <- rbind(cnames, d)
+  
+  for(i in 1:NROW(d)) cat(d[i,], '\r\n')
 }
