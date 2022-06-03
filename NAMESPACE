@@ -2,6 +2,7 @@
 
 export(eqxwr)
 export(eqxwr_add)
+export(eqxwr_display)
 export(eqxwr_drop)
 export(make_all_EQ_indexes)
 export(make_all_EQ_states)

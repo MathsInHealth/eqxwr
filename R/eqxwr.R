@@ -104,9 +104,6 @@ eqxwr <- function(x, country = NULL, dim.names = c("mo", "sc", "ua", "pd", "ad")
   
 }
 
-
-
-
 #' @title eqxwr_display
 #' @description Display available reverse crosswalk value sets.
 #' @param return_df If set to TRUE, the function will return information on the names of the available value sets in a data.frame. Defaults to FALSE
@@ -117,9 +114,17 @@ eqxwr <- function(x, country = NULL, dim.names = c("mo", "sc", "ua", "pd", "ad")
 #' @export
 eqxwr_display <- function(return_df = FALSE) {
   pkgenv <- getOption("eq.env")
-  .prettyPrint(rbind(pkgenv$country_codes[["5L"]], if(NROW(pkgenv$user_defined_5L)) rbind(pkgenv$user_defined_5L) else NULL))
+
+  message('Available national value sets:')
+  .prettyPrint(pkgenv$country_codes[["5L"]], 'l')
+  if(NROW(pkgenv$user_defined_5L)) {
+    message('User-defined value sets:')    
+    .prettyPrint(pkgenv$user_defined_5L, 'l')
+  } else {
+    message('No user-defined value sets available.')
+  }
   if(return_df) return(rbind(cbind(Type = 'Value set', pkgenv$country_codes[["5L"]]), if(NROW(pkgenv$user_defined_5L)) cbind(Type = 'User-defined', pkgenv$user_defined_5L) else NULL))
-  NULL
+  retval <- NULL
 }
 
 
@@ -128,6 +133,7 @@ eqxwr_display <- function(return_df = FALSE) {
 #' @param df A data.frame or file name pointing to csv file. The contents of the data.frame or csv file should be exactly two olumns: state, containing a list of all 3125 EQ-5D-5L health state vectors, and a column of corresponding utility values, with a suitable name.
 #' @param country Optional string. If not NULL, will be used as a country description for the user-defined value set.
 #' @param description Optional string. If not NULL, will be used as a descriptive text for the user-defined value set. 
+#' @param code2L Optional string. If not NULL, will be used as the two-digit code for the value set. Must be different from any existing national value set code.
 #' @return True/False, indicating success or error.
 #' @examples 
 #' # make nonsense value set
@@ -136,7 +142,7 @@ eqxwr_display <- function(return_df = FALSE) {
 #' eqxwr_add(new_df, 'Fantasia')
 #' @importFrom utils read.csv
 #' @export
-eqxwr_add <- function(df, country = NULL, description = NULL) {
+eqxwr_add <- function(df, country = NULL, description = NULL, code2L = NULL, code3L = NULL, three_letter_code = NULL) {
   pkgenv <- getOption("eq.env")
   if(class(df) == 'character') {
     if(!file.exists(df)) stop('File named ', df, ' does not appear to exist. Exiting.')

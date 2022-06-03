@@ -38,15 +38,16 @@ find_cache_dir <- function(pkg) {
   }
 }
 
-.prettyPrint <- function(df) {
+.prettyPrint <- function(df, justify = 'r') {
   cnames <- colnames(df)
+  if(length(justify)<length(cnames)) justify <- rep(justify, length(cnames))
   n      <- as.matrix(nchar(cnames))
   
   d <- as.matrix(as.data.frame(apply(df, 2, format, simplify = F)))
   d[which(trimws(d) == "NA", arr.ind = T)] <- ""
   n <- apply(cbind(n, nchar(d[1,])), 1, max)
   
-  fmts <- paste0("%",n, "s")
+  fmts <- vapply(1:length(justify), FUN.VALUE = 'aha', function(i) paste0("%",ifelse(tolower(justify[[i]]) == 'l','-', ''), n[[i]], "s"))
   for(i in 1:length(cnames)) {
     cnames[i] <- sprintf(fmts[i], cnames[i])
     d[,i] <- sprintf(fmts[i], trimws(d[,i]))
